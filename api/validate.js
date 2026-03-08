@@ -50,7 +50,9 @@ export default async function handler(req, res) {
       .select('*')
       .eq('hwid', hwid)
       .eq('app_id', appId)
+      .eq('record_type', 'user')
       .maybeSingle();
+
 
     if (error) throw error;
 
