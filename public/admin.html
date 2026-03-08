@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MET Admin Panel</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --bg: #0f172a; --bg-card: #1e293b; --bg-input: #0f172a; --bg-hover: #334155;
+      --border: #334155; --accent: #6366f1; --success: #22c55e; --danger: #ef4444;
+      --warning: #f59e0b; --info: #3b82f6; --text: #f1f5f9; --text-sec: #94a3b8;
+      --text-muted: #64748b; --radius: 8px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+    .header h1 { font-size: 20px; display: flex; align-items: center; gap: 10px; }
+    .header h1 i { color: var(--accent); }
+    .header .badge { font-size: 10px; padding: 2px 8px; border-radius: 12px; background: var(--accent); color: white; }
+    #loginSection { max-width: 400px; margin: 100px auto; text-align: center; }
+    #loginSection input { width: 100%; padding: 12px; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 14px; margin-bottom: 12px; }
+    .btn { padding: 8px 16px; border: none; border-radius: var(--radius); cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; font-weight: 500; }
+    .btn:hover { filter: brightness(1.15); }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-success { background: var(--success); color: white; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-warning { background: var(--warning); color: #000; }
+    .btn-secondary { background: var(--bg-hover); color: var(--text); border: 1px solid var(--border); }
+    .btn-sm { padding: 4px 10px; font-size: 11px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; text-align: center; }
+    .stat-card .value { font-size: 28px; font-weight: 700; }
+    .stat-card .label { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+    .stat-card.active .value { color: var(--success); }
+    .stat-card.trial .value { color: var(--warning); }
+    .stat-card.banned .value { color: var(--danger); }
+    .stat-card.keys .value { color: var(--info); }
+    .actions-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+    .actions-bar input { padding: 8px 12px; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 13px; flex: 1; min-width: 200px; }
+    table { width: 100%; border-collapse: collapse; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    th { background: var(--bg-hover); padding: 10px 12px; font-size: 11px; text-transform: uppercase; color: var(--text-muted); text-align: left; font-weight: 600; }
+    td { padding: 8px 12px; font-size: 12px; border-top: 1px solid var(--border); }
+    tr:hover td { background: rgba(99,102,241,0.05); }
+    .badge-status { padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+    .badge-active { background: rgba(34,197,94,0.2); color: var(--success); }
+    .badge-trial { background: rgba(245,158,11,0.2); color: var(--warning); }
+    .badge-expired { background: rgba(148,163,184,0.2); color: var(--text-sec); }
+    .badge-banned { background: rgba(239,68,68,0.2); color: var(--danger); }
+    .badge-dead { background: rgba(239,68,68,0.15); color: #f87171; }
+    .badge-unused { background: rgba(59,130,246,0.2); color: var(--info); }
+    .badge-unknown { background: rgba(100,116,139,0.2); color: var(--text-muted); }
+    code { font-family: 'SF Mono', monospace; font-size: 10px; background: var(--bg); padding: 2px 5px; border-radius: 4px; }
+    .pagination { display: flex; gap: 6px; margin-top: 16px; justify-content: center; align-items: center; }
+    .pagination .btn { min-width: 32px; justify-content: center; }
+    .pagination .info { font-size: 12px; color: var(--text-muted); }
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay.active { display: flex; }
+    .modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; min-width: 400px; max-width: 600px; }
+    .modal-box h3 { margin-bottom: 16px; font-size: 16px; }
+    .modal-box .form-group { margin-bottom: 12px; }
+    .modal-box label { display: block; font-size: 12px; color: var(--text-sec); margin-bottom: 4px; }
+    .modal-box input, .modal-box select { width: 100%; padding: 8px 10px; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 13px; }
+    .modal-box .btn-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+    .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; border-radius: var(--radius); color: white; font-size: 13px; z-index: 200; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--danger); }
+    .section-title { font-size: 14px; color: var(--text-sec); margin: 24px 0 12px; display: flex; align-items: center; gap: 8px; }
+    .section-title i { color: var(--accent); }
+    .key-list { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; line-height: 2; }
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .actions-bar { flex-direction: column; }
+      .actions-bar input { min-width: 100%; }
+      table { font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Login -->
+    <div id="loginSection">
+      <h1 style="margin-bottom:24px;justify-content:center"><i class="fas fa-shield-halved" style="color:var(--accent);font-size:32px"></i></h1>
+      <h2 style="margin-bottom:8px">MET Admin Panel</h2>
+      <p style="color:var(--text-muted);margin-bottom:24px;font-size:13px">Enter your admin secret to continue</p>
+      <input type="password" id="secretInput" placeholder="Admin Secret" autofocus>
+      <br>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" id="btnLogin"><i class="fas fa-lock"></i> Login</button>
+      <p id="loginError" style="color:var(--danger);font-size:12px;margin-top:12px;display:none"></p>
+    </div>
+
+    <!-- Dashboard (hidden until login) -->
+    <div id="dashSection" style="display:none">
+      <div class="header">
+        <h1><i class="fas fa-satellite-dish"></i> MET Admin <span class="badge">v6.1</span></h1>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:11px;color:var(--text-muted)" id="lastRefresh"></span>
+          <button class="btn btn-secondary btn-sm" id="btnRefreshStats"><i class="fas fa-sync"></i> Refresh</button>
+          <button class="btn btn-secondary btn-sm" id="btnLogout"><i class="fas fa-sign-out-alt"></i></button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><div class="value" id="statTotal">-</div><div class="label">Total Records</div></div>
+        <div class="stat-card active"><div class="value" id="statActive">-</div><div class="label">Active</div></div>
+        <div class="stat-card trial"><div class="value" id="statTrial">-</div><div class="label">Trial</div></div>
+        <div class="stat-card"><div class="value" id="statExpired">-</div><div class="label">Expired</div></div>
+        <div class="stat-card banned"><div class="value" id="statBanned">-</div><div class="label">Banned</div></div>
+        <div class="stat-card keys"><div class="value" id="statKeys">-</div><div class="label">Unused Keys</div></div>
+        <div class="stat-card"><div class="value" id="statUsers">-</div><div class="label">Users</div></div>
+        <div class="stat-card"><div class="value" id="statDead">-</div><div class="label">Dead</div></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="section-title"><i class="fas fa-bolt"></i> Quick Actions</div>
+      <div class="actions-bar">
+        <button class="btn btn-primary" id="btnGenKeys"><i class="fas fa-key"></i> Generate Keys</button>
+        <button class="btn btn-warning btn-sm" id="btnGrantTrial"><i class="fas fa-clock"></i> Grant Trial</button>
+        <div style="flex:1"></div>
+        <input type="text" id="searchInput" placeholder="Search by HWID, key, or IP..." style="max-width:350px">
+        <button class="btn btn-secondary" id="btnSearch"><i class="fas fa-search"></i></button>
+      </div>
+
+      <!-- License Table -->
+      <div class="section-title"><i class="fas fa-table"></i> Licenses <span id="tableCount" style="font-size:11px;color:var(--text-muted)"></span></div>
+      <div style="overflow-x:auto">
+        <table id="licenseTable">
+          <thead>
+            <tr>
+              <th>Type</th><th>Status</th><th>HWID</th><th>License Key</th><th>IP</th><th>Last Check</th><th>Created</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="licenseTableBody">
+            <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+
+  <!-- Generate Keys Modal -->
+  <div class="modal-overlay" id="genModal">
+    <div class="modal-box">
+      <h3><i class="fas fa-key" style="color:var(--accent)"></i> Generate License Keys</h3>
+      <div class="form-group"><label>Number of keys</label><input type="number" id="genCount" value="5" min="1" max="100"></div>
+      <div class="form-group"><label>Notes (optional)</label><input type="text" id="genNotes" placeholder="e.g. Batch for client X"></div>
+      <div id="genResult" style="display:none"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="document.getElementById('genModal').classList.remove('active')">Cancel</button>
+        <button class="btn btn-primary" id="btnDoGenerate"><i class="fas fa-bolt"></i> Generate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grant Trial Modal -->
+  <div class="modal-overlay" id="trialModal">
+    <div class="modal-box">
+      <h3><i class="fas fa-clock" style="color:var(--warning)"></i> Grant Trial</h3>
+      <div class="form-group"><label>HWID</label><input type="text" id="trialHwid" placeholder="User HWID"></div>
+      <div class="form-group"><label>Hours</label><input type="number" id="trialHours" value="24" min="1" max="720"></div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="document.getElementById('trialModal').classList.remove('active')">Cancel</button>
+        <button class="btn btn-warning" id="btnDoGrantTrial"><i class="fas fa-clock"></i> Grant</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    const APP_ID = 'media-engagement-tool';
+    let secret = '';
+    let currentPage = 1;
+    const PAGE_SIZE = 50;
+
+    // Toast
+    function toast(msg, type = 'success') {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = `toast ${type}`;
+      el.style.display = 'block';
+      setTimeout(() => el.style.display = 'none', 3000);
+    }
+
+    // API call helper
+    async function apiCall(action, params = {}) {
+      const resp = await fetch(`${API_BASE}/api/admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, secret, app_id: APP_ID, ...params }),
+      });
+      const data = await resp.json();
+      if (!resp.ok || data.error) throw new Error(data.error || 'Request failed');
+      return data;
+    }
+
+    // Login
+    document.getElementById('btnLogin').addEventListener('click', doLogin);
+    document.getElementById('secretInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+    async function doLogin() {
+      secret = document.getElementById('secretInput').value.trim();
+      if (!secret) return;
+      try {
+        await apiCall('stats');
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('dashSection').style.display = 'block';
+        sessionStorage.setItem('met_admin_secret', secret);
+        refreshAll();
+      } catch (e) {
+        document.getElementById('loginError').style.display = 'block';
+        document.getElementById('loginError').textContent = 'Invalid secret: ' + e.message;
+      }
+    }
+
+    // Auto-login from session
+    const savedSecret = sessionStorage.getItem('met_admin_secret');
+    if (savedSecret) {
+      document.getElementById('secretInput').value = savedSecret;
+      doLogin();
+    }
+
+    document.getElementById('btnLogout').addEventListener('click', () => {
+      sessionStorage.removeItem('met_admin_secret');
+      location.reload();
+    });
+
+    // Refresh
+    async function refreshAll() {
+      await loadStats();
+      await loadLicenses();
+      document.getElementById('lastRefresh').textContent = 'Updated: ' + new Date().toLocaleTimeString();
+    }
+
+    document.getElementById('btnRefreshStats').addEventListener('click', refreshAll);
+
+    // Stats
+    async function loadStats() {
+      try {
+        const r = await apiCall('stats');
+        const s = r.stats;
+        document.getElementById('statTotal').textContent = s.total;
+        document.getElementById('statActive').textContent = s.active;
+        document.getElementById('statTrial').textContent = s.trial;
+        document.getElementById('statExpired').textContent = s.expired;
+        document.getElementById('statBanned').textContent = s.banned;
+        document.getElementById('statKeys').textContent = s.unused_keys;
+        document.getElementById('statUsers').textContent = s.users;
+        document.getElementById('statDead').textContent = s.dead;
+      } catch (e) { toast('Stats error: ' + e.message, 'error'); }
+    }
+
+    // License list
+    async function loadLicenses(page = 1) {
+      currentPage = page;
+      try {
+        const r = await apiCall('list', { page, limit: PAGE_SIZE });
+        renderTable(r.data || []);
+        renderPagination(r.total || 0, r.page, r.pages);
+        document.getElementById('tableCount').textContent = `(${r.total} total)`;
+      } catch (e) {
+        document.getElementById('licenseTableBody').innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--danger)">${esc(e.message)}</td></tr>`;
+      }
+    }
+
+    function renderTable(rows) {
+      const tbody = document.getElementById('licenseTableBody');
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted)">No records</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td><span class="badge-status badge-${r.record_type === 'key' ? 'unused' : 'unknown'}">${r.record_type || '?'}</span></td>
+          <td><span class="badge-status badge-${r.status || 'unknown'}">${r.status || '?'}</span></td>
+          <td>${r.hwid ? `<code title="${esc(r.hwid)}">${esc(r.hwid.substring(0, 16))}...</code>` : '<span style="color:var(--text-muted)">-</span>'}</td>
+          <td>${r.license_key ? `<code>${esc(r.license_key)}</code>` : '<span style="color:var(--text-muted)">-</span>'}</td>
+          <td><span style="font-size:11px">${r.ip_address || '-'}</span></td>
+          <td><span style="font-size:10px;color:var(--text-muted)">${r.last_check ? fmtDate(r.last_check) : '-'}</span></td>
+          <td><span style="font-size:10px;color:var(--text-muted)">${fmtDate(r.created_at)}</span></td>
+          <td>
+            <div style="display:flex;gap:3px;flex-wrap:wrap">
+              ${r.status !== 'banned' ? `<button class="btn btn-danger btn-sm" onclick="doAction('ban',{hwid:'${esc(r.hwid)}',license_key:'${esc(r.license_key)}'})"><i class="fas fa-ban"></i></button>` : `<button class="btn btn-success btn-sm" onclick="doAction('unban',{hwid:'${esc(r.hwid)}',license_key:'${esc(r.license_key)}'})"><i class="fas fa-check"></i></button>`}
+              ${r.hwid && r.record_type === 'user' ? `<button class="btn btn-warning btn-sm" onclick="doAction('kill',{hwid:'${esc(r.hwid)}'})" title="Kill"><i class="fas fa-skull"></i></button>` : ''}
+              ${r.hwid && r.record_type === 'user' ? `<button class="btn btn-danger btn-sm" onclick="doAction('wipe',{hwid:'${esc(r.hwid)}'})" title="Wipe"><i class="fas fa-trash-can"></i></button>` : ''}
+              <button class="btn btn-secondary btn-sm" onclick="doAction('delete',{id:'${r.id}',hwid:'${esc(r.hwid)}',license_key:'${esc(r.license_key)}'})" title="Delete record"><i class="fas fa-times"></i></button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderPagination(total, page, pages) {
+      const el = document.getElementById('pagination');
+      if (pages <= 1) { el.innerHTML = ''; return; }
+      let html = `<button class="btn btn-secondary btn-sm" ${page <= 1 ? 'disabled' : ''} onclick="loadLicenses(${page - 1})"><i class="fas fa-chevron-left"></i></button>`;
+      html += `<span class="info">Page ${page} of ${pages}</span>`;
+      html += `<button class="btn btn-secondary btn-sm" ${page >= pages ? 'disabled' : ''} onclick="loadLicenses(${page + 1})"><i class="fas fa-chevron-right"></i></button>`;
+      el.innerHTML = html;
+    }
+
+    // Search
+    document.getElementById('btnSearch').addEventListener('click', doSearch);
+    document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+    async function doSearch() {
+      const q = document.getElementById('searchInput').value.trim();
+      if (!q) { loadLicenses(1); return; }
+      try {
+        const r = await apiCall('search', { query: q });
+        renderTable(r.data || []);
+        document.getElementById('tableCount').textContent = `(${r.count} results)`;
+        document.getElementById('pagination').innerHTML = '';
+      } catch (e) { toast('Search error: ' + e.message, 'error'); }
+    }
+
+    // Generate Keys
+    document.getElementById('btnGenKeys').addEventListener('click', () => {
+      document.getElementById('genResult').style.display = 'none';
+      document.getElementById('genModal').classList.add('active');
+    });
+
+    document.getElementById('btnDoGenerate').addEventListener('click', async () => {
+      const btn = document.getElementById('btnDoGenerate');
+      btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+      try {
+        const count = parseInt(document.getElementById('genCount').value) || 5;
+        const notes = document.getElementById('genNotes').value.trim();
+        const r = await apiCall('generate', { count, notes: notes || undefined });
+        const resultDiv = document.getElementById('genResult');
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = `<div class="key-list">${r.keys.map(k => k.key).join('<br>')}</div><p style="font-size:11px;color:var(--text-muted);margin-top:8px">${r.count} keys generated. Copy them now!</p>`;
+        toast(`${r.count} license keys generated`);
+        refreshAll();
+      } catch (e) { toast('Generate error: ' + e.message, 'error'); }
+      btn.disabled = false; btn.innerHTML = '<i class="fas fa-bolt"></i> Generate';
+    });
+
+    // Grant Trial
+    document.getElementById('btnGrantTrial').addEventListener('click', () => {
+      document.getElementById('trialModal').classList.add('active');
+    });
+
+    document.getElementById('btnDoGrantTrial').addEventListener('click', async () => {
+      const hwid = document.getElementById('trialHwid').value.trim();
+      const hours = parseInt(document.getElementById('trialHours').value) || 24;
+      if (!hwid) { toast('HWID is required', 'error'); return; }
+      try {
+        await apiCall('set-trial', { hwid, hours });
+        toast(`Trial granted: ${hours}h for ${hwid.substring(0, 12)}...`);
+        document.getElementById('trialModal').classList.remove('active');
+        refreshAll();
+      } catch (e) { toast('Error: ' + e.message, 'error'); }
+    });
+
+    // Generic action
+    async function doAction(action, params) {
+      const confirmActions = ['ban', 'kill', 'wipe', 'delete', 'erase-app'];
+      if (confirmActions.includes(action)) {
+        const target = params.hwid ? `HWID ${params.hwid.substring(0, 16)}` : `key ${params.license_key}`;
+        if (!confirm(`${action.toUpperCase()} ${target}?`)) return;
+      }
+      try {
+        const r = await apiCall(action, params);
+        toast(r.message || `${action} completed`);
+        refreshAll();
+      } catch (e) { toast(`${action} error: ${e.message}`, 'error'); }
+    }
+
+    // Close modals on backdrop click
+    document.querySelectorAll('.modal-overlay').forEach(m => {
+      m.addEventListener('click', e => { if (e.target === m) m.classList.remove('active'); });
+    });
+
+    // Helpers
+    function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+    function fmtDate(iso) { if (!iso) return '-'; const d = new Date(iso); return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' }) + ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); }
+
+    // Auto-refresh every 60s
+    setInterval(() => { if (document.getElementById('dashSection').style.display !== 'none') refreshAll(); }, 60000);
+  </script>
+</body>
+</html>
