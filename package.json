@@ -1,6 +1,7 @@
 {
   "name": "trial-license-server",
   "version": "1.0.0",
+  "type": "module",
   "description": "Modular trial/license server for Electron apps. Supabase backend. Deploy to Vercel. Supports: generate, activate, set-trial, list, search, ban, unban, kill, wipe.",
   "private": true,
   "scripts": {
