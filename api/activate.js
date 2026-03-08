@@ -1,12 +1,3 @@
-/**
- * Trial License Server — /api/activate
- *
- * POST { hwid, license_key, app_id, fingerprint }
- *
- * Activates a license key by binding it to the given HWID.
- * Sets status = 'active', records activated_at, ip_address.
- */
-
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -39,7 +30,6 @@ export default async function handler(req, res) {
       .select('*')
       .eq('license_key', license_key)
       .eq('app_id', appId)
-      .eq('record_type', 'key')
       .maybeSingle();
 
     if (findError) throw findError;
@@ -60,12 +50,13 @@ export default async function handler(req, res) {
       });
     }
 
-    // Activate: bind HWID, set status = active
+    // Activate: bind HWID, set status = active, convert key → user (single record)
     const { error: updateError } = await supabase
       .from('licenses')
       .update({
         hwid,
         status: 'active',
+        record_type: 'user',
         activated_at: new Date().toISOString(),
         last_check: new Date().toISOString(),
         ip_address: ip,
@@ -74,43 +65,6 @@ export default async function handler(req, res) {
       .eq('id', licenseData.id);
 
     if (updateError) throw updateError;
-
-    // Also create/update user record for this HWID
-    const { data: existing } = await supabase
-      .from('licenses')
-      .select('id')
-      .eq('hwid', hwid)
-      .eq('app_id', appId)
-      .eq('record_type', 'user')
-      .maybeSingle();
-
-    if (existing) {
-      await supabase
-        .from('licenses')
-        .update({
-          status: 'active',
-          license_key,
-          activated_at: new Date().toISOString(),
-          last_check: new Date().toISOString(),
-          ip_address: ip,
-        })
-        .eq('id', existing.id);
-    } else {
-      await supabase
-        .from('licenses')
-        .insert([{
-          hwid,
-          app_id: appId,
-          status: 'active',
-          record_type: 'user',
-          license_key,
-          activated_at: new Date().toISOString(),
-          last_check: new Date().toISOString(),
-          ip_address: ip,
-          fingerprint: fingerprint || null,
-          created_at: new Date().toISOString(),
-        }]);
-    }
 
     return res.status(200).json({
       status: 'active',
